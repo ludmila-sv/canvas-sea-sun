@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas</title>
+<script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js'></script>
+<script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/stats.js/r11/Stats.js'></script>
+<style type="text/css">
+body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background: #6fa1eb;
+	overflow: hidden;
+}
+#canvas {
+	width: 100%;
+	height: 100%;
+}
+</style>
+</head>
+<body>
+
+	<canvas id="canvas"></canvas>
+
+
+
+<script type="text/javascript">
+document.body.onload = function () {
+    init();
+};
+
+function init() {
+	var canvas = document.getElementById('canvas');
+	var canvas_width = window.innerWidth;
+	var canvas_height = window.innerHeight;
+	canvas.width = canvas_width;
+	canvas.height = canvas_height;
+
+	if (canvas.getContext) {
+		var ctx = canvas.getContext('2d');
+
+		var n_dots = 10;
+		var line_width = 1;
+		var cpx, cpy, x, y, ampl;
+		var ampl0 = canvas.height/8;
+		var v_ampl = 1;
+		var x0 = 0;
+		var y0 = canvas.height-ampl0*2;
+		var xn = canvas.width;
+		var dx = (xn-x0)/n_dots;
+		var sign = -1;
+		var color = '#0377ca';
+
+		ampl = ampl0;
+
+		ctx.fillStyle = color;
+		ctx.strokeStyle = color;
+		ctx.lineWidth = line_width;
+
+		/*quadraticCurveTo(cp1x, cp1y, x, y)
+		Рисуется квадратичная кривая Безье с текущей позиции пера в конечную точку с координатами x и y, используя контрольную точку с координатами cp1x и cp1y.
+
+		bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+		Рисуется кубическая кривая Безье с текущей позиции пера в конечную точку с координатами x и y, используя две контрольные точки с координатами (cp1x, cp1y) и (cp2x, cp2y).*/
+
+		function draw_sea(ampl,x0, y0, color){
+
+			ctx.fillStyle = color;
+			ctx.strokeStyle = color;
+
+			ctx.beginPath();
+			ctx.moveTo(x0, y0);
+			y = y0;
+
+			for (i = 1; i < n_dots+2; i++) {
+				x = x0 + i * dx;
+				cpx = x - dx/2;
+				cpy = (i%2 == 0) ? y + ampl : y - ampl;
+				ctx.quadraticCurveTo(cpx, cpy, x, y);
+			}
+			ctx.lineTo(x,y*2);
+			ctx.lineTo(0,y*2);
+
+			ctx.fill();
+
+		}
+
+		function animate_sea(){
+			ctx.clearRect(0,(y0 - ampl0),canvas.width,canvas.height);
+
+			if (ampl <= ampl0/2) {
+				sign = 1;
+			}
+			if (ampl >= ampl0) {
+				sign = -1;
+			}
+			ampl = ampl + sign * v_ampl;
+
+			draw_sea(ampl,x0, y0, color);
+			draw_sea(ampl,-50, canvas.height-ampl0*1.3,'#1f85ce');
+			draw_sea(ampl,x0, canvas.height-ampl0*0.6, color);
+			window.requestAnimationFrame(animate_sea);
+		}
+
+		window.requestAnimationFrame(animate_sea);
+
+		//sun
+		var sun_center = {
+			x:300,
+			y:150
+		}
+		var sun_radius = 50;
+		var n_rays = 50;
+		var ray_length0 = 50;
+		var angle = 360/n_rays/180*Math.PI;
+		var ray_x, ray_y, alpha, ray_length;
+
+		function draw_sun(){
+			ctx.fillStyle = 'gold';
+			ctx.strokeStyle = 'gold';
+			ctx.lineWidth = 1;
+
+			ctx.beginPath();
+			ctx.arc(sun_center.x,sun_center.y,sun_radius,0,Math.PI*2,true);
+			ctx.fill();
+
+			for (i = 0; i < n_rays; i++) {
+				ray_length = sun_radius + ray_length0*Math.random();
+				alpha = i*angle;
+				ctx.moveTo(sun_center.x,sun_center.y);
+				ray_x = sun_center.x-ray_length*Math.cos(alpha);
+				ray_y = sun_center.y-ray_length*Math.sin(alpha);
+				ctx.lineTo(ray_x,ray_y);
+			}
+			ctx.stroke();
+		}
+
+		function animate_rays(){
+			ctx.clearRect(0,0,(sun_center.x + sun_radius + ray_length0 ),(sun_center.y + sun_radius + ray_length0 ));
+
+			draw_sun();
+			setTimeout(animate_rays,200);
+		}
+
+		setTimeout(animate_rays,200);
+
+
+		// clouds
+		var cloud_x = canvas.width-300;
+		var cloud_y = 150;
+
+		function draw_clouds(){
+			ctx.fillStyle = 'white';
+			ctx.strokeStyle = 'white';
+			var x1,x2,x3,x4,y1,y2,y3,y4;
+			var cx1,cx2,cx3,cx4,cx5,cx6,cx7,cx8,cy1,cy2,cy3,cy4,cy5,cy6,cy7,cy8;
+
+			ctx.beginPath();
+			ctx.moveTo(cloud_x,cloud_y);
+
+			x1 = cloud_x+50; y1 = cloud_y-50; cx1 = cloud_x; cy1 = cloud_y-50;
+			ctx.quadraticCurveTo(cx1, cy1, x1, y1);
+
+			x2 = x1+50; y2 = y1-30; cx2 = x1; cy2 = y1-30; cx3 = x1+25; cy3 = y1-50;
+			ctx.bezierCurveTo(cx2, cy2, cx3, cy3, x2, y2)
+
+			x3 = x2+50; y3 = y2+30; cx4 = x2+15; cy4 = y2-10; cx5 = x3; cy5 = y3-50;
+			ctx.bezierCurveTo(cx4, cy4, cx5, cy5, x3, y3)
+
+			x4 = x3+50; y4 = y3+50; cx6 = x4; cy6 = y3;
+			ctx.quadraticCurveTo(cx6, cy6, x4, y4);
+
+			cx7 = x4; cy7 = y4+50; cx8 = cloud_x; cy8 =  y4+50;
+			ctx.bezierCurveTo(cx7, cy7, cx8, cy8, cloud_x, cloud_y);
+			ctx.fill();
+
+		}
+		draw_clouds();
+
+	}
+}
+
+</script>
+
+
+</body>
+</html>
